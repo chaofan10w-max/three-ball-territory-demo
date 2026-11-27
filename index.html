@@ -1,0 +1,1950 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101f20">
+  <meta name="description" content="双方各三球。每局随机球桌，球边碰到得分区就得分。">
+  <title>三球抢地</title>
+  <style>
+:root {
+  color-scheme: dark;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  font-size: 16px;
+  --text: #f3f4e6;
+  --muted: #b7c9c0;
+  --line: #354b49;
+  --panel: #192e2f;
+  --orange: #ffbc72;
+  --blue: #8cdeec;
+  --green: #d6e5a7;
+  background: #102123;
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 45% -10%, #35534a77, transparent 68%),
+    radial-gradient(circle, #d1edce12 1px, transparent 1.15px) 0 0 / 22px 22px,
+    linear-gradient(150deg, #14282a, #0d1e21 87%);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) max(20px, env(safe-area-inset-bottom)) env(safe-area-inset-left);
+}
+
+button, textarea { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, textarea:focus-visible, canvas:focus-visible { outline: 2px solid #edffb9; outline-offset: 3px; }
+button { border: 0; color: inherit; }
+h1, h2, p, ol { margin: 0; }
+
+.masthead {
+  max-width: 776px;
+  width: calc(100% - 40px);
+  margin: 0 auto 19px;
+  padding: 18px 0 13px;
+  border-bottom: 1px solid #b9d4bc21;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.identity, .utilities { display: flex; align-items: center; gap: 12px; }
+.identity h1 { font-size: 1.6rem; letter-spacing: 0.08em; line-height: 1.1; white-space: nowrap; }
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  display: block;
+  position: relative;
+  border: 1px solid #718f707c;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #31564b, #203d39);
+  box-shadow: inset 0 1px #d4dab71e, 0 4px 10px #0003;
+  flex: 0 0 auto;
+}
+.brand-mark i { position: absolute; width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 1px #fff9, 1px 2px 3px #112924; }
+.brand-mark i:nth-child(1) { left: 14px; top: 8px; background: #e6e4ab; }
+.brand-mark i:nth-child(2) { left: 8px; top: 20px; background: #eda059; }
+.brand-mark i:nth-child(3) { left: 21px; top: 20px; background: #73c9e2; }
+.utilities { gap: 8px; }
+.utility {
+  display: inline-flex;
+  gap: 7px;
+  padding: 0 11px;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  border: 1px solid #415553;
+  border-radius: 10px;
+  background: #172c2ce6;
+  color: #dbe7d9;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.utility:hover, .secondary:hover { background: #2a4242; }
+.utility[aria-pressed="false"] { color: #adc0b8; }
+.utility-glyph { width: 14px; font-size: 1rem; line-height: 1; }
+.help-glyph { border: 1px solid #a4bbb0; border-radius: 50%; width: 15px; height: 15px; font-size: 0.7rem; line-height: 13px; }
+
+.layout {
+  width: calc(100% - 40px);
+  max-width: 776px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto minmax(260px, 320px);
+  gap: 22px;
+  justify-content: center;
+  align-items: start;
+}
+.stage {
+  --table-width: 366px;
+  --table-width: clamp(232px, calc(61.54svh - 171px), 408px);
+  width: calc(var(--table-width) + 18px);
+  min-width: 0;
+}
+
+.scoreboard { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: stretch; margin-bottom: 9px; }
+.score-side {
+  --team: var(--orange);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 66px;
+  padding: 7px 11px;
+  border-radius: 11px;
+  border: 1px solid #4a5349;
+  background: linear-gradient(146deg, #303b31, #233133 88%);
+  box-shadow: inset 0 1px #f3ffdd0c;
+}
+.score-side.blue {
+  --team: var(--blue);
+  flex-direction: row;
+  border-color: #3d565b;
+  background: linear-gradient(220deg, #263e44, #203135 88%);
+}
+.score-side.active { border-color: var(--team); box-shadow: inset 0 0 18px color-mix(in srgb, var(--team) 7%, transparent); }
+.score-meta { min-width: 0; display: grid; gap: 6px; }
+.team-name { white-space: nowrap; color: var(--team); font-weight: 700; line-height: 1; font-size: 0.875rem; }
+.blue .score-meta { justify-items: end; }
+.score-number { font: 770 2.05rem/1 system-ui, sans-serif; letter-spacing: -0.06em; font-variant-numeric: tabular-nums; }
+.pips { display: flex; align-items: center; gap: 4px; height: 10px; }
+.pip { width: 9px; height: 9px; background: var(--team); border-radius: 50%; box-shadow: inset 0 1px #fff7; position: relative; }
+.pip::after { position: absolute; content: ""; width: 4px; height: 1px; inset: 4px auto auto 2.5px; background: #202b26; border-radius: 2px; }
+.blue .pip::after { transform: rotate(45deg); box-shadow: 0 0 0 #0000; }
+.blue .pip::before { position: absolute; content: ""; width: 4px; height: 1px; inset: 4px auto auto 2.5px; background: #202b26; border-radius: 2px; transform: rotate(-45deg); }
+.pip.used { background: transparent; outline: 1px solid #b5c7bc5c; outline-offset: -1px; box-shadow: none; }
+.pip.used::before, .pip.used::after { display: none; }
+.round { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; min-width: 63px; padding-inline: 3px; text-align: center; }
+.round-title { font-size: 0.815rem; font-weight: 750; color: #ebf0da; white-space: nowrap; }
+.round-detail { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+
+.court-frame {
+  position: relative;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #aa8661;
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, #d6a56955, #2c170c18 37%, #32171038 60%, #e0b48148),
+    repeating-linear-gradient(1deg, #77573d 0 2px, #815f43 2px 5px, #846044 5px 7px);
+  box-shadow: inset 0 1px #f2ca8c91, inset 0 -2px #3021177a, 0 6px #4d3528, 0 8px #182827, 0 14px 26px #071817b3;
+}
+#court {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 13;
+  border-radius: 6px;
+  background: #18443e;
+  box-shadow: 0 0 0 1px #312b22, 0 0 0 2px #311d1255;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: contain;
+}
+#court.can-shoot { cursor: grab; }
+#court.aiming { cursor: grabbing; }
+
+.bench { margin-top: 15px; }
+.turn-control, .finish-control {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 10px 12px;
+  color: var(--muted);
+  background: #182d30d9;
+  border: 1px solid #415552;
+  border-radius: 11px;
+}
+.turn-text, .finish-copy { display: grid; gap: 4px; }
+.turn-text strong, .finish-copy strong { font-size: 0.96rem; color: var(--text); line-height: 1.15; }
+.turn-text strong.orange-turn { color: var(--orange); }
+.turn-text strong.blue-turn { color: var(--blue); }
+.turn-text > span, .finish-copy > span { font-size: 0.83rem; line-height: 1.45; }
+.turn-text > .checkpoint-note, .finish-copy > .checkpoint-note { color: #e0eac2; }
+.power { flex: 0 0 88px; display: grid; justify-items: stretch; gap: 5px; text-align: right; font-size: 0.75rem; white-space: nowrap; }
+.power-track { position: relative; height: 5px; border-radius: 8px; background: #415653; overflow: hidden; }
+#power-fill { display: block; height: 100%; width: 0; border-radius: inherit; background: #ffbc72; }
+#power-fill.blue { background: var(--blue); }
+.finish-control { flex-wrap: wrap; }
+.finish-buttons { flex: 1 0 100%; display: grid; grid-template-columns: 0.7fr 1.3fr; gap: 8px; }
+.finish-buttons .secondary { white-space: normal; }
+.finish-buttons:has(#new-game:not([hidden])) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.primary, .secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 0.91rem;
+  font-weight: 720;
+  text-align: center;
+  white-space: nowrap;
+}
+.primary { color: #172521; background: var(--green); border: 1px solid #ecf5bf; box-shadow: inset 0 1px #fff8; }
+.primary:hover { background: #e6efbc; }
+.secondary { border: 1px solid #688080; background: #233c3d; color: #e5eddf; }
+
+.rail-panel { display: grid; gap: 12px; }
+.panel {
+  padding: 15px;
+  background: linear-gradient(140deg, #213839f2, #182e30f2);
+  border: 1px solid #3f5552;
+  border-radius: 14px;
+  box-shadow: 0 6px 12px #0c1b2135, inset 0 1px #e6ffec0b;
+}
+.panel h2 { font-size: 0.94rem; line-height: 1.45; font-weight: 720; margin-bottom: 11px; }
+.mode-switch { border: 1px solid #465d55; border-radius: 11px; padding: 3px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: #112a2a; }
+.mode { color: #cbd8cd; background: transparent; padding: 7px 2px; min-height: 40px; border: 1px solid transparent; border-radius: 8px; font-size: 0.875rem; font-weight: 650; white-space: nowrap; }
+.mode:hover { background: #2d4943; }
+.mode[aria-pressed="true"] { color: #ecf1ce; border-color: #73856a; background: #3a5142; box-shadow: inset 0 1px #e6f8c325; }
+.small-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; }
+.text-button { background: transparent; color: #c2d3c9; padding: 6px 0; min-height: 36px; font-size: 0.83rem; }
+.text-button:hover { color: #fffad8; text-decoration: underline; text-underline-offset: 3px; }
+.empty-play, .challenge-panel p { color: var(--muted); font-size: 0.875rem; line-height: 1.55; }
+.history { list-style: none; padding: 0; display: grid; gap: 0; }
+.history li { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) auto; align-items: baseline; gap: 7px; padding: 9px 0; border-top: 1px solid #bfd8c524; font-size: 0.835rem; }
+.history li:first-child { border-top: 0; padding-top: 0; }
+.history li:last-child { padding-bottom: 0; }
+.history-no { color: #a4beb3; font: 600 0.73rem/1.3 system-ui, sans-serif; }
+.history-note { display: grid; gap: 3px; }
+.history-note strong { color: var(--orange); font-size: 0.83rem; font-weight: 700; }
+.history-note strong.blue { color: var(--blue); }
+.history-note span { color: var(--muted); line-height: 1.4; }
+.history-score { color: var(--text); font: 700 0.85rem/1 system-ui, sans-serif; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.prop-guide { display: grid; gap: 10px; padding: 5px 6px; }
+.guide-row { display: flex; align-items: center; gap: 10px; }
+.guide-row p { display: grid; gap: 2px; color: #c9d7ca; font-size: 0.84rem; line-height: 1.35; }
+.guide-row strong { color: #f3f4e6; }
+.guide-icon { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; font: 800 1.06rem/1 system-ui, sans-serif; }
+.guide-icon.pillar { color: #fae6dc; background: linear-gradient(#b77b66, #78483e); border: 1px solid #e3aa95; }
+.guide-icon.spring { color: #143e37; background: linear-gradient(#aadfaf, #5bad96); border: 1px solid #dbf2d1; }
+.challenge-results { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.challenge-results div { display: grid; gap: 6px; padding: 9px 10px; background: #102728; border: 1px solid #506664; border-radius: 8px; }
+.challenge-results span { font-size: 0.815rem; color: var(--muted); }
+.challenge-results strong { font-size: 1rem; color: #e4ecc1; }
+
+.notice, .error { margin-top: 10px; color: #ffcf96; font-size: 0.87rem; line-height: 1.5; }
+dialog {
+  color: var(--text);
+  background: linear-gradient(150deg, #253f3e, #182f32);
+  border: 1px solid #758d80;
+  border-radius: 17px;
+  width: min(440px, calc(100vw - 28px));
+  max-height: calc(100dvh - 32px);
+  padding: 19px;
+  box-shadow: 0 20px 65px #071517b3;
+}
+dialog::backdrop { background: #071317b8; backdrop-filter: blur(3px); }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 13px; }
+.dialog-head h2 { font-size: 1.15rem; line-height: 1.3; }
+.close { width: 38px; height: 38px; background: #36504f; color: #e7ecdf; border: 1px solid #78908969; border-radius: 9px; font-size: 1.4rem; line-height: 1; }
+.close:hover { background: #45615b; }
+.rule-list { padding-left: 22px; display: grid; gap: 9px; font-size: 0.94rem; line-height: 1.6; }
+.dialog-note, .share-pitch { color: var(--muted); font-size: 0.94rem; line-height: 1.55; margin-top: 14px; }
+.share-pitch { margin: 0 0 13px; }
+.dialog-action { width: 100%; margin-top: 13px; }
+dialog label { display: block; font-size: 0.875rem; color: var(--muted); line-height: 1.5; }
+.code-input { width: 100%; padding: 8px; margin-top: 6px; resize: vertical; border: 1px solid #6b8881; border-radius: 8px; background: #102628; color: #eff9e7; font-family: ui-monospace, monospace; font-size: 1rem; }
+.share-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+.copy-feedback { min-height: 1.35em; margin-top: 9px; color: #def0a9; font-size: 0.875rem; }
+
+#result-dialog {
+  width: min(412px, calc(100% - 28px));
+  padding: clamp(15px, 5vw, 23px);
+  background: radial-gradient(ellipse at 50% 0, #455740, transparent 72%), linear-gradient(150deg, #26413d, #152b2d);
+  border-color: #a4b995;
+}
+#result-dialog::backdrop { background: #081b1dbb; backdrop-filter: blur(2px); }
+.result-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #e0eac2; font-size: 0.875rem; font-weight: 650; }
+.result-review { width: auto; height: 36px; padding: 0 9px; font-size: 0.84rem; background: #203b38; white-space: nowrap; }
+#result-title { margin: 8px 0 13px; color: #fff4d3; font-size: clamp(1.6rem, 6vw, 2.15rem); line-height: 1.15; }
+.result-scores {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.result-team {
+  display: grid;
+  gap: 3px;
+  padding: 9px 4px 10px;
+  border: 1px solid #647166;
+  border-radius: 10px;
+  background: #182e2d;
+}
+.result-team.orange { color: var(--orange); }
+.result-team.blue { color: var(--blue); }
+.result-team span { font-size: 0.87rem; font-weight: 650; }
+.result-team strong { font: 800 clamp(2rem, 10vw, 2.8rem)/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.result-score-label, .result-breakdown { color: #e2ebd6; font-size: 0.84rem; text-align: center; }
+.result-breakdown { margin-top: 9px; line-height: 1.4; }
+.result-note { margin-top: 10px; color: var(--muted); font-size: 0.89rem; line-height: 1.45; }
+.result-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+.result-actions .primary { flex: 1 0 auto; }
+.result-actions .secondary { flex: 1.5 0 auto; }
+.result-actions:has(#result-new-game:not([hidden])) > button { flex: 1 1 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  #result-dialog[open] { animation: result-appear 180ms ease-out both; }
+  @keyframes result-appear {
+    from { transform: translateY(10px) scale(0.97); opacity: 0.6; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+}
+
+@media (max-width: 720px) {
+  .masthead { width: calc(100% - 26px); max-width: 426px; margin-bottom: 10px; padding: 10px 0 9px; }
+  .identity { gap: 8px; }
+  .identity h1 { font-size: 1.32rem; letter-spacing: 0.06em; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 9px; }
+  .brand-mark i:nth-child(1) { left: 11px; top: 5px; }
+  .brand-mark i:nth-child(2) { left: 5px; top: 17px; }
+  .brand-mark i:nth-child(3) { left: 18px; top: 17px; }
+  .utility { height: 38px; padding-inline: 8px; gap: 4px; }
+  .utilities { gap: 6px; }
+  .layout { width: min(calc(100% - 26px), 426px); grid-template-columns: minmax(0, 1fr); gap: 13px; }
+  .stage { --table-width: clamp(206px, calc(61.54svh - 126px), 408px); width: min(100%, calc(var(--table-width) + 14px)); justify-self: center; }
+  .score-side { min-height: 60px; padding: 6px 8px; }
+  .court-frame { padding: 6px; border-radius: 12px; }
+  .bench { margin-top: 13px; }
+  .rail-panel { width: 100%; gap: 11px; }
+  .panel { padding: 12px; }
+  .prop-guide { grid-row: 2; grid-template-columns: 1fr 1fr; }
+  .history-panel:has(.history:empty) { display: none; }
+}
+
+@media (max-width: 335px) {
+  .identity h1 { font-size: 1.16rem; }
+  .masthead { width: calc(100% - 18px); }
+  .layout { width: calc(100% - 18px); }
+  .utilities { gap: 4px; }
+  .utility { padding-inline: 5px; }
+  .round { min-width: 53px; }
+  .scoreboard { gap: 5px; }
+}
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="identity">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <h1 data-copy="title"></h1>
+    </div>
+    <nav class="utilities" aria-label="游戏选项">
+      <button class="utility" id="sound" type="button" aria-pressed="true"><span class="utility-glyph" aria-hidden="true">♪</span><span id="sound-label"></span></button>
+      <button class="utility" id="rules" type="button"><span class="utility-glyph help-glyph" aria-hidden="true">?</span><span data-copy="rules"></span></button>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="stage" aria-label="球桌与比分">
+      <div class="scoreboard" aria-label="比分和剩余球数">
+        <div class="score-side orange" id="side-0">
+          <div class="score-meta"><span class="team-name" id="name-0"></span><div class="pips" id="pips-0"></div></div>
+          <strong class="score-number" id="score-0">0</strong>
+        </div>
+        <div class="round">
+          <span class="round-title" id="round-title"></span>
+          <span class="round-detail" id="round-detail"></span>
+        </div>
+        <div class="score-side blue" id="side-1">
+          <strong class="score-number" id="score-1">0</strong>
+          <div class="score-meta"><span class="team-name" id="name-1"></span><div class="pips" id="pips-1"></div></div>
+        </div>
+      </div>
+
+      <div class="court-frame">
+        <canvas id="court" width="320" height="520" tabindex="0" aria-label="球桌。按住白圈内的球，反向拖动后松手。也可用方向键瞄准，空格发球。"></canvas>
+      </div>
+
+      <div class="bench">
+        <div class="turn-control" id="turn-control">
+          <div class="turn-text">
+            <strong id="turn-title" aria-live="polite"></strong>
+            <span id="turn-hint"></span>
+            <span class="checkpoint-note" id="checkpoint-note" hidden></span>
+          </div>
+          <div class="power" id="power" hidden>
+            <span id="power-label"></span>
+            <span class="power-track"><span id="power-fill"></span></span>
+          </div>
+        </div>
+        <div class="finish-control" id="finish-control" hidden>
+          <div class="finish-copy">
+            <strong id="finish-title" aria-live="polite"></strong>
+            <span id="finish-detail"></span>
+            <span class="checkpoint-note" id="finish-breakdown" hidden></span>
+          </div>
+          <div class="finish-buttons">
+            <button class="primary" id="again" type="button"></button>
+            <button class="secondary" id="new-game" type="button" data-copy="tryMyGame" hidden></button>
+            <button class="secondary" id="share" type="button" data-copy="challengeFriend"></button>
+          </div>
+        </div>
+      </div>
+      <p class="notice" id="notice" role="status" hidden></p>
+    </section>
+
+    <aside class="rail-panel" aria-label="对局设置与记录">
+      <section class="panel mode-panel">
+        <h2 data-copy="modeHeading"></h2>
+        <div class="mode-switch" aria-label="选择对战模式" role="group">
+          <button data-mode="cpu" class="mode" type="button" aria-pressed="true" data-copy="cpuMode"></button>
+          <button data-mode="local" class="mode" type="button" aria-pressed="false" data-copy="localMode"></button>
+        </div>
+        <div class="small-actions">
+          <button class="text-button" id="restart" type="button" data-copy="restart"></button>
+          <button class="text-button" id="enter-code" type="button" data-copy="enterCode"></button>
+        </div>
+      </section>
+
+      <section class="panel challenge-panel" id="challenge-panel" hidden>
+        <h2 data-copy="challengeHeading"></h2>
+        <p id="challenge-benchmark"></p>
+        <div class="challenge-results" id="challenge-results" hidden>
+          <div><span data-copy="originalShot"></span><strong id="compare-original"></strong></div>
+          <div><span data-copy="yourShot"></span><strong id="compare-new"></strong></div>
+        </div>
+      </section>
+
+      <section class="panel history-panel">
+        <h2 data-copy="historyHeading"></h2>
+        <p class="empty-play" id="history-empty" data-copy="historyEmpty"></p>
+        <ol id="history" class="history"></ol>
+      </section>
+
+      <section class="prop-guide" id="prop-guide" aria-label="球桌道具">
+        <div class="guide-row">
+          <span class="guide-icon pillar" aria-hidden="true">＝</span>
+          <p><strong data-copy="propPillar"></strong><span data-copy="propPillarHint"></span></p>
+        </div>
+        <div class="guide-row">
+          <span class="guide-icon spring" aria-hidden="true">ϟ</span>
+          <p><strong data-copy="propSpring"></strong><span data-copy="propSpringHint"></span></p>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="result-dialog" aria-labelledby="result-title" aria-describedby="result-note">
+    <div class="result-top">
+      <span id="result-kind"></span>
+      <button class="close result-review" type="button" data-copy="resultReview"></button>
+    </div>
+    <h2 id="result-title"></h2>
+    <div class="result-scores" aria-label="结算比分">
+      <div class="result-team orange"><span id="result-name-0"></span><strong id="result-score-0"></strong></div>
+      <span class="result-score-label" id="result-score-label"></span>
+      <div class="result-team blue"><span id="result-name-1"></span><strong id="result-score-1"></strong></div>
+    </div>
+    <p class="result-breakdown" id="result-breakdown" hidden></p>
+    <p class="result-note" id="result-note"></p>
+    <div class="result-actions">
+      <button class="primary" id="result-again" type="button" autofocus></button>
+      <button class="secondary" id="result-new-game" type="button" data-copy="tryMyGame" hidden></button>
+      <button class="secondary" id="result-share" type="button" data-copy="challengeFriend"></button>
+    </div>
+  </dialog>
+
+  <dialog id="rules-dialog" aria-labelledby="rules-title">
+    <div class="dialog-head"><h2 id="rules-title" data-copy="rules"></h2><button class="close" type="button" aria-label="关闭">×</button></div>
+    <ol class="rule-list">
+      <li data-copy="ruleAim"></li>
+      <li id="rule-layout" data-copy="ruleLayout"></li>
+      <li id="rule-score" data-copy="ruleScore"></li>
+      <li id="rule-props" data-copy="ruleProps"></li>
+      <li data-copy="ruleService"></li>
+      <li id="rule-end" data-copy="ruleEnd"></li>
+    </ol>
+    <p class="dialog-note" data-copy="ruleKeyboard"></p>
+    <form method="dialog"><button class="primary dialog-action" data-copy="understood"></button></form>
+  </dialog>
+
+  <dialog id="code-dialog" aria-labelledby="code-title">
+    <div class="dialog-head"><h2 id="code-title" data-copy="enterCode"></h2><button class="close" type="button" aria-label="关闭">×</button></div>
+    <form id="code-form">
+      <label for="code-input" data-copy="codeInstruction"></label>
+      <textarea class="code-input" id="code-input" required rows="3" maxlength="1100" spellcheck="false" autocapitalize="off"></textarea>
+      <p class="error" id="code-error" role="alert" hidden></p>
+      <button class="primary dialog-action" type="submit" data-copy="playChallenge"></button>
+    </form>
+  </dialog>
+
+  <dialog id="share-dialog" aria-labelledby="share-title">
+    <div class="dialog-head"><h2 id="share-title" data-copy="challengeFriend"></h2><button class="close" type="button" aria-label="关闭">×</button></div>
+    <p class="share-pitch" id="share-pitch"></p>
+    <label id="share-value-label" for="share-value"></label>
+    <textarea class="code-input" id="share-value" readonly rows="3" spellcheck="false"></textarea>
+    <div class="share-actions">
+      <button class="primary" id="copy-link" type="button" data-copy="copyLink"></button>
+      <button class="secondary" id="copy-code" type="button" data-copy="copyCode"></button>
+    </div>
+    <p class="copy-feedback" id="copy-feedback" role="status"></p>
+  </dialog>
+
+  <script>
+"use strict";
+
+// Positions are in table units and velocities are in table units per second.
+const Physics = (() => {
+  const WIDTH = 320;
+  const HEIGHT = 520;
+  const RADIUS = 12;
+  const SERVICE_LINE = 430;
+  const SPAWN = Object.freeze({ x: 160, y: 478 });
+  const ZONES = Object.freeze([
+    { x: 36, y: 240, w: 96, h: 104, points: 2 },
+    { x: 198, y: 137, w: 88, h: 103, points: 3 },
+    { x: 126, y: 36, w: 68, h: 66, points: 5 },
+  ]);
+  const CLASSIC_TABLE = Object.freeze({ zones: ZONES, props: [], edgeScoring: false });
+  const ZONE_RANGES = [
+    { points: 2, width: [80, 116], height: [74, 105], top: [247, 305] },
+    { points: 3, width: [63, 94], height: [61, 90], top: [128, 212] },
+    { points: 5, width: [46, 72], height: [43, 67], top: [29, 111] },
+  ];
+  const PROP_TYPES = [
+    { kind: "pillar", radius: 14, top: [181, 389], bounce: 0.8 },
+    { kind: "spring", radius: 16, top: [105, 341], bounce: 1.12 },
+  ];
+  const STEP = 1 / 120;
+  const STOP_STEPS = 18;
+  const MAX_STEPS = 960;
+  const DECELERATION = 430;
+  const MAX_SPEED = 700;
+  const MIN_PULL = 8;
+  const MAX_PULL = 104;
+  const BALL_BOUNCE = 0.94;
+  const WALL_BOUNCE = 0.77;
+  const MIN_SPEED = 5;
+
+  const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+
+  function distanceToZoneSquared(x, y, zone) {
+    const dx = Math.max(zone.x - x, 0, x - zone.x - zone.w);
+    const dy = Math.max(zone.y - y, 0, y - zone.y - zone.h);
+    return dx * dx + dy * dy;
+  }
+
+  function zonesAreValid(zones) {
+    return zones.every((zone, index) => {
+      const { width, height, top } = ZONE_RANGES[index];
+      if (zone.x < 22 || zone.x + zone.w > WIDTH - 22 ||
+          zone.y < top[0] || zone.y > top[1] ||
+          zone.w < width[0] || zone.w > width[1] ||
+          zone.h < height[0] || zone.h > height[1]) return false;
+      return zones.slice(0, index).every(other => {
+        const dx = Math.max(zone.x - other.x - other.w, 0, other.x - zone.x - zone.w);
+        const dy = Math.max(zone.y - other.y - other.h, 0, other.y - zone.y - zone.h);
+        return dx * dx + dy * dy >= (2 * RADIUS + 6) ** 2;
+      });
+    });
+  }
+
+  function clearPath(x, y, props) {
+    const dx = x - SPAWN.x;
+    const dy = y - SPAWN.y;
+    return props.every(prop => {
+      const fraction = clamp(((prop.x - SPAWN.x) * dx + (prop.y - SPAWN.y) * dy) / (dx * dx + dy * dy), 0, 1);
+      const gapX = prop.x - SPAWN.x - dx * fraction;
+      const gapY = prop.y - SPAWN.y - dy * fraction;
+      return gapX * gapX + gapY * gapY > (prop.radius + RADIUS + 3) ** 2;
+    });
+  }
+
+  function propsAreValid(props, zones) {
+    return props.every((prop, index) => {
+      const { top } = PROP_TYPES[index];
+      return prop.x >= 43 && prop.x <= WIDTH - 43 && prop.y >= top[0] && prop.y <= top[1] &&
+        props.slice(0, index).every(other => Math.hypot(prop.x - other.x, prop.y - other.y) >=
+          prop.radius + other.radius + 2 * RADIUS + 8) &&
+        zones.every(zone => distanceToZoneSquared(prop.x, prop.y, zone) >= (prop.radius + RADIUS + 5) ** 2);
+    }) && zones.every(zone => [0.25, 0.5, 0.75].some(fraction =>
+      clearPath(zone.x + zone.w * fraction, zone.y + zone.h / 2, props)));
+  }
+
+  function newTable() {
+    const pick = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const zones = ZONE_RANGES.map(({ points, width, height, top }) => {
+        const w = pick(...width);
+        return { x: pick(22, WIDTH - 22 - w), y: pick(...top), w, h: pick(...height), points };
+      });
+      if (!zonesAreValid(zones)) continue;
+      const props = [];
+      for (const [index, type] of PROP_TYPES.entries()) {
+        for (let i = 0; i < 36; i += 1) {
+          const prop = { x: pick(43, WIDTH - 43), y: pick(...type.top), ...type };
+          if (!propsAreValid([...props, prop], zones)) continue;
+          props.push(prop);
+          break;
+        }
+        if (props.length === index) break;
+      }
+      if (props.length === PROP_TYPES.length) return { zones, props, edgeScoring: true };
+    }
+    // A safe fallback in case the independent placement attempts are exhausted.
+    return restoreTable([
+      [[34, 281, 96, 92], [198, 170, 82, 81], [126, 43, 68, 61]],
+      [[230, 336], [67, 148]],
+    ]);
+  }
+
+  function packTable(table) {
+    return [table.zones.map(({ x, y, w, h }) => [x, y, w, h]),
+      table.props.map(({ x, y }) => [x, y])];
+  }
+
+  function restoreTable(data) {
+    const hasCoordinates = (list, count, width) => Array.isArray(list) && list.length === count &&
+      list.every(row => Array.isArray(row) && row.length === width && row.every(Number.isInteger));
+    if (!Array.isArray(data) || data.length !== 2 ||
+        !hasCoordinates(data[0], ZONE_RANGES.length, 4) || !hasCoordinates(data[1], PROP_TYPES.length, 2)) {
+      throw new Error("Invalid table layout");
+    }
+    const zones = data[0].map(([x, y, w, h], index) => ({ x, y, w, h, points: ZONE_RANGES[index].points }));
+    const props = data[1].map(([x, y], index) => ({ x, y, ...PROP_TYPES[index] }));
+    if (!zonesAreValid(zones) || !propsAreValid(props, zones)) throw new Error("Out of bounds table layout");
+    return { zones, props, edgeScoring: true };
+  }
+
+  function zoneAt(x, y, table = CLASSIC_TABLE) {
+    const reach = table.edgeScoring ? RADIUS * RADIUS + 1e-7 : 0;
+    return table.zones.findIndex(zone => distanceToZoneSquared(x, y, zone) <= reach);
+  }
+
+  function score(balls, table = CLASSIC_TABLE) {
+    const points = [0, 0];
+    for (const ball of balls) {
+      const zone = table.zones[zoneAt(ball.x, ball.y, table)];
+      if (zone) points[ball.side] += zone.points;
+    }
+    return points;
+  }
+
+  function restingBall(ball) {
+    return { x: ball.x, y: ball.y, side: ball.side, vx: 0, vy: 0 };
+  }
+
+  function aimedShot(dx, dy) {
+    const pull = Math.hypot(dx, dy);
+    const angle = Math.atan2(-dy, -dx);
+    const strength = Math.min(pull / MAX_PULL, 1);
+    return { angle, strength, canShoot: pull >= MIN_PULL };
+  }
+
+  function newBall(side, shot) {
+    const speed = shot.strength * MAX_SPEED;
+    return {
+      x: SPAWN.x, y: SPAWN.y, side,
+      vx: Math.cos(shot.angle) * speed,
+      vy: Math.sin(shot.angle) * speed,
+    };
+  }
+
+  function keepInside(ball, onImpact) {
+    const x = clamp(ball.x, RADIUS, WIDTH - RADIUS);
+    const y = clamp(ball.y, RADIUS, HEIGHT - RADIUS);
+    let impact = 0;
+    if (x !== ball.x && Math.sign(ball.vx) === Math.sign(ball.x - x)) {
+      impact = Math.abs(ball.vx);
+      ball.vx *= -WALL_BOUNCE;
+    }
+    if (y !== ball.y && Math.sign(ball.vy) === Math.sign(ball.y - y)) {
+      impact = Math.max(impact, Math.abs(ball.vy));
+      ball.vy *= -WALL_BOUNCE;
+    }
+    ball.x = x;
+    ball.y = y;
+    if (impact > 27 && onImpact) onImpact(x, y, impact, "wall");
+  }
+
+  function bump(first, second, onImpact) {
+    const dx = second.x - first.x;
+    const dy = second.y - first.y;
+    const distanceSquared = dx * dx + dy * dy;
+    const diameter = 2 * RADIUS;
+    if (distanceSquared >= diameter * diameter) return;
+
+    const distance = Math.sqrt(distanceSquared);
+    const nx = distance > 0 ? dx / distance : 1;
+    const ny = distance > 0 ? dy / distance : 0;
+    const overlap = (diameter - distance) / 2;
+    first.x -= nx * overlap;
+    first.y -= ny * overlap;
+    second.x += nx * overlap;
+    second.y += ny * overlap;
+
+    const approaching = (first.vx - second.vx) * nx + (first.vy - second.vy) * ny;
+    if (approaching <= 0) return;
+    const impulse = approaching * (1 + BALL_BOUNCE) / 2;
+    first.vx -= impulse * nx;
+    first.vy -= impulse * ny;
+    second.vx += impulse * nx;
+    second.vy += impulse * ny;
+
+    if (approaching > 27 && onImpact) {
+      onImpact((first.x + second.x) / 2, (first.y + second.y) / 2, approaching, "ball");
+    }
+  }
+
+  function bumpProp(ball, prop, onImpact) {
+    const dx = ball.x - prop.x;
+    const dy = ball.y - prop.y;
+    const gap = prop.radius + RADIUS;
+    const distanceSquared = dx * dx + dy * dy;
+    if (distanceSquared >= gap * gap) return;
+
+    const distance = Math.sqrt(distanceSquared);
+    const nx = distance > 0 ? dx / distance : 1;
+    const ny = distance > 0 ? dy / distance : 0;
+    ball.x = prop.x + nx * gap;
+    ball.y = prop.y + ny * gap;
+    const incoming = -(ball.vx * nx + ball.vy * ny);
+    if (incoming <= 0) return;
+
+    const rebound = prop.kind === "spring" && incoming < 70 ? 0.94 : prop.bounce;
+    const impulse = incoming * (1 + rebound);
+    ball.vx += impulse * nx;
+    ball.vy += impulse * ny;
+    const speed = Math.hypot(ball.vx, ball.vy);
+    if (speed > MAX_SPEED) {
+      ball.vx *= MAX_SPEED / speed;
+      ball.vy *= MAX_SPEED / speed;
+    }
+    if (incoming > 27 && onImpact) {
+      onImpact(prop.x + nx * prop.radius, prop.y + ny * prop.radius, incoming, prop.kind);
+    }
+  }
+
+  function step(balls, onImpact, table = CLASSIC_TABLE) {
+    for (const ball of balls) {
+      ball.x += ball.vx * STEP;
+      ball.y += ball.vy * STEP;
+      keepInside(ball, onImpact);
+    }
+
+    // A second contact pass handles clusters pinned against a rail.
+    for (let pass = 0; pass < 2; pass += 1) {
+      for (let i = 0; i < balls.length; i += 1) {
+        for (let j = i + 1; j < balls.length; j += 1) bump(balls[i], balls[j], onImpact);
+      }
+      for (const ball of balls) {
+        for (const prop of table.props) bumpProp(ball, prop, onImpact);
+        keepInside(ball, onImpact);
+      }
+    }
+
+    let allStopped = true;
+    for (const ball of balls) {
+      const speed = Math.hypot(ball.vx, ball.vy);
+      const remaining = speed - DECELERATION * STEP;
+      const factor = remaining > MIN_SPEED ? remaining / speed : 0;
+      ball.vx *= factor;
+      ball.vy *= factor;
+      if (factor) allStopped = false;
+    }
+    return allStopped;
+  }
+
+  function simulate(startingBalls, side, shot, table = CLASSIC_TABLE) {
+    const balls = startingBalls.map(restingBall);
+    balls.push(newBall(side, shot));
+    let still = 0;
+    for (let tick = 0; tick < MAX_STEPS && still < STOP_STEPS; tick += 1) {
+      still = step(balls, undefined, table) ? still + 1 : 0;
+    }
+    return balls.filter(ball => ball.y < SERVICE_LINE).map(restingBall);
+  }
+
+  function chooseShot(startingBalls, side, turnNumber, table = CLASSIC_TABLE) {
+    const candidates = [];
+    const enemy = 1 - side;
+    const opening = turnNumber < 2;
+    const lastShot = turnNumber >= 4;
+    const attackWeight = opening ? 0.3 : lastShot ? 2.5 : 1.2;
+    const highZonePenalty = opening ? 2.7 : lastShot ? 0 : 1.2;
+
+    function aimAt(x, y, distanceOffset, angleOffset) {
+      const distance = Math.max(1, Math.hypot(x - SPAWN.x, y - SPAWN.y) + distanceOffset);
+      const angle = Math.atan2(y - SPAWN.y, x - SPAWN.x) + angleOffset;
+      const strength = clamp((Math.sqrt(2 * DECELERATION * distance) - 1.5) / MAX_SPEED, 0.18, 1);
+      candidates.push({ angle, strength });
+    }
+
+    for (const zone of table.zones) {
+      const x = zone.x + zone.w / 2;
+      const y = zone.y + zone.h / 2;
+      for (const angle of [-0.09, -0.04, 0, 0.045, 0.095]) {
+        for (const offset of [-27, -11, 4, 20, 35]) aimAt(x, y, offset, angle);
+      }
+      for (const rail of [RADIUS, WIDTH - RADIUS]) {
+        for (const offset of [35, 70, 115]) aimAt(2 * rail - x, y, offset, 0);
+      }
+      for (const fraction of [0.25, 0.75]) {
+        for (const offset of [-18, 2, 22]) aimAt(zone.x + zone.w * fraction, y, offset, 0);
+      }
+    }
+    for (const prop of table.props) {
+      for (const angle of [-0.1, -0.06, -0.025, 0.025, 0.06, 0.1]) {
+        for (const offset of [95, 200]) aimAt(prop.x, prop.y, offset, angle);
+      }
+    }
+    for (const ball of startingBalls) {
+      if (opening || ball.side !== enemy || zoneAt(ball.x, ball.y, table) < 0) continue;
+      for (const angle of [-0.05, -0.028, 0, 0.026, 0.05]) {
+        for (const offset of [12, 32, 60, 92, 145]) aimAt(ball.x, ball.y, offset, angle);
+      }
+    }
+
+    let best = candidates[0];
+    let bestValue = -Infinity;
+    const variation = Math.random() * 7;
+    for (let i = 0; i < candidates.length; i += 1) {
+      const candidate = candidates[i];
+      const landed = simulate(startingBalls, side, candidate, table);
+      const points = score(landed, table);
+      let safety = 0;
+      let highBalls = 0;
+      const zoneCount = new Set();
+      for (const ball of landed) {
+        const index = zoneAt(ball.x, ball.y, table);
+        if (ball.side !== side || index < 0) continue;
+        const zone = table.zones[index];
+        const edgeDistance = Math.min(ball.x - zone.x, zone.x + zone.w - ball.x,
+          ball.y - zone.y, zone.y + zone.h - ball.y);
+        safety += Math.min(edgeDistance, 19) / 19;
+        if (zone.points === 5) highBalls += 1;
+        zoneCount.add(index);
+      }
+      // Prefer wider scoring zones on the first shot. Look for attacks as the board fills up.
+      const ownPoints = points[side] - highZonePenalty * highBalls;
+      const value = 4 * ownPoints - attackWeight * points[enemy] + safety +
+        (turnNumber < 5 ? 1.2 * zoneCount.size + 1.35 * Math.sin(i * 53.7 + variation) : 0);
+      if (value > bestValue) {
+        best = candidate;
+        bestValue = value;
+      }
+    }
+    // Apply the aiming error after choosing a shot so the simulation cannot correct it.
+    return {
+      angle: best.angle + (Math.random() - 0.5) * 0.11,
+      strength: clamp(best.strength + (Math.random() - 0.5) * 0.10, MIN_PULL / MAX_PULL, 1),
+    };
+  }
+
+  function zoneChanges(before, after, table = CLASSIC_TABLE) {
+    function counts(balls, index) {
+      const result = [0, 0];
+      for (const ball of balls) {
+        if (zoneAt(ball.x, ball.y, table) === index) result[ball.side] += 1;
+      }
+      return result;
+    }
+    return table.zones.flatMap((zone, index) => {
+      const past = counts(before, index);
+      const now = counts(after, index);
+      const change = now.map((count, side) => count - past[side]);
+      return change.some(Boolean) ? [{ index, points: zone.points, change }] : [];
+    });
+  }
+
+  return { WIDTH, HEIGHT, RADIUS, SERVICE_LINE, SPAWN, CLASSIC_TABLE, STEP, STOP_STEPS,
+    MAX_STEPS, MAX_PULL, MIN_PULL, MIN_SPEED, clamp, zoneAt, score, restingBall,
+    aimedShot, newBall, step, simulate, chooseShot, zoneChanges, newTable, packTable, restoreTable };
+})();
+
+const Challenge = (() => {
+  function encode(side, balls, original, table = Physics.CLASSIC_TABLE, usesFinalTwoScores = false) {
+    const version = table.edgeScoring ? (usesFinalTwoScores ? 3 : 2) : 1;
+    const map = table.edgeScoring ? Physics.packTable(table) : "courtyard";
+    const data = [version, map, side, balls.map(ball => [ball.side, ball.x, ball.y]), original];
+    const code = btoa(JSON.stringify(data)).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+    return `3B${version}-${code}`;
+  }
+
+  function decode(input) {
+    const code = input.trim();
+    if (code.length > 900 || !/^3B[123]-[\w-]+$/.test(code)) throw new Error("Invalid challenge code");
+    const version = Number(code[2]);
+    const payload = code.slice(4).replaceAll("-", "+").replaceAll("_", "/");
+    const data = JSON.parse(atob(payload));
+    if (!Array.isArray(data) || data.length !== 5 || data[0] !== version ||
+        (version === 1 && data[1] !== "courtyard")) {
+      throw new Error("Unsupported challenge version or map");
+    }
+
+    const [, map, side, layout, original] = data;
+    const table = version === 1 ? Physics.CLASSIC_TABLE : Physics.restoreTable(map);
+    const usesFinalTwoScores = version === 3;
+    const highestScore = usesFinalTwoScores ? 30 : 15;
+    if ((side !== 0 && side !== 1) || !Array.isArray(layout) || layout.length > 5 ||
+        !Array.isArray(original) || original.length !== 2 ||
+        original.some(value => !Number.isInteger(value) || value < 0 || value > highestScore)) {
+      throw new Error("Invalid challenge score or turn");
+    }
+
+    const counts = [0, 0];
+    const balls = [];
+    for (const entry of layout) {
+      if (!Array.isArray(entry) || entry.length !== 3) throw new Error("Invalid challenge ball");
+      const [team, x, y] = entry;
+      if ((team !== 0 && team !== 1) || !Number.isFinite(x) || !Number.isFinite(y) ||
+          x < Physics.RADIUS || x > Physics.WIDTH - Physics.RADIUS ||
+          y < Physics.RADIUS || y >= Physics.SERVICE_LINE ||
+          table.props.some(prop => Math.hypot(prop.x - x, prop.y - y) < prop.radius + Physics.RADIUS - 1.5) ||
+          balls.some(ball => Math.hypot(ball.x - x, ball.y - y) < 2 * Physics.RADIUS - 1.5)) {
+        throw new Error("Invalid ball position");
+      }
+      counts[team] += 1;
+      balls.push({ side: team, x, y, vx: 0, vy: 0 });
+    }
+    if (counts[side] > 2 || counts[1 - side] > 3) throw new Error("Too many challenge balls");
+    if (usesFinalTwoScores) {
+      const checkpoint = Physics.score(balls, table);
+      if (original.some((points, team) => points < checkpoint[team] || points > checkpoint[team] + 15)) {
+        throw new Error("Invalid combined result");
+      }
+    }
+    return { code, side, balls, original, table, usesFinalTwoScores };
+  }
+
+  return { encode, decode };
+})();
+</script>
+  <script>
+"use strict";
+
+const Court = (() => {
+  const { WIDTH, HEIGHT, RADIUS, SERVICE_LINE, SPAWN } = Physics;
+  const TEAMS = [
+    { glint: "#fff4be", light: "#ffce71", middle: "#f79943", dark: "#8d3c21", ink: "#743916", flare: "#ffba67" },
+    { glint: "#d6ffff", light: "#8ce8f4", middle: "#37b7e7", dark: "#174974", ink: "#174b74", flare: "#76def1" },
+  ];
+  const INLAYS = [
+    { fill: "#297357", line: "#a2bb83", digits: "#e0e7b2" },
+    { fill: "#225f68", line: "#8cc4c5", digits: "#ceeae5" },
+    { fill: "#706344", line: "#dac384", digits: "#f4dfa2" },
+  ];
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function create(canvas) {
+    const ctx = canvas.getContext("2d", { alpha: false });
+    const background = document.createElement("canvas");
+    const surface = background.getContext("2d", { alpha: false });
+    const motes = [];
+    let paintedTable = null;
+
+    function arc(context, x, y, radius) {
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+    }
+
+    function texturedFelt(context) {
+      const tile = document.createElement("canvas");
+      tile.width = tile.height = 128;
+      const pixels = tile.getContext("2d");
+      const grain = pixels.createImageData(tile.width, tile.height);
+      let seed = 8172;
+      for (let i = 0; i < grain.data.length; i += 4) {
+        seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
+        const light = Boolean(seed & 4096);
+        grain.data[i] = light ? 215 : 3;
+        grain.data[i + 1] = light ? 240 : 16;
+        grain.data[i + 2] = light ? 216 : 19;
+        grain.data[i + 3] = (seed >>> 24) % 33;
+      }
+      pixels.putImageData(grain, 0, 0);
+      return context.createPattern(tile, "repeat");
+    }
+
+    function paintProp(prop) {
+      const { x, y, radius, kind } = prop;
+      const spring = kind === "spring";
+      surface.save();
+      surface.shadowColor = "#071813aa";
+      surface.shadowBlur = 7;
+      surface.shadowOffsetY = 3;
+      arc(surface, x, y + 2, radius);
+      surface.fillStyle = spring ? "#265548" : "#4b2d27";
+      surface.fill();
+      surface.shadowBlur = 0;
+      surface.shadowOffsetY = 0;
+
+      const cap = surface.createLinearGradient(x, y - radius, x, y + radius);
+      cap.addColorStop(0, spring ? "#b7e6b3" : "#d28b73");
+      cap.addColorStop(1, spring ? "#4ca68e" : "#834d40");
+      arc(surface, x, y, radius);
+      surface.fillStyle = cap;
+      surface.fill();
+      surface.lineWidth = 1.4;
+      surface.strokeStyle = spring ? "#ddf6d1" : "#f1bda6";
+      surface.stroke();
+      arc(surface, x, y, radius - 4);
+      surface.lineWidth = 0.9;
+      surface.strokeStyle = spring ? "#215f54a0" : "#592f29a0";
+      surface.stroke();
+
+      surface.beginPath();
+      if (spring) {
+        surface.moveTo(x + 1, y - 8);
+        surface.lineTo(x - 6, y + 1);
+        surface.lineTo(x - 1, y + 1);
+        surface.lineTo(x - 2, y + 8);
+        surface.lineTo(x + 6, y - 2);
+        surface.lineTo(x + 1, y - 2);
+        surface.closePath();
+        surface.fillStyle = "#143e37";
+        surface.fill();
+      } else {
+        surface.moveTo(x - 5, y - 3);
+        surface.lineTo(x + 5, y - 3);
+        surface.moveTo(x - 5, y + 3);
+        surface.lineTo(x + 5, y + 3);
+        surface.lineWidth = 2.2;
+        surface.lineCap = "round";
+        surface.strokeStyle = "#f9d1b9";
+        surface.stroke();
+      }
+      surface.restore();
+    }
+
+    function paintFelt(table) {
+      const scale = background.width / WIDTH;
+      surface.setTransform(scale, 0, 0, background.height / HEIGHT, 0, 0);
+      const felt = surface.createLinearGradient(0, 0, WIDTH * 0.55, HEIGHT);
+      felt.addColorStop(0, "#235e55");
+      felt.addColorStop(0.48, "#104e49");
+      felt.addColorStop(1, "#153b39");
+      surface.fillStyle = felt;
+      surface.fillRect(0, 0, WIDTH, HEIGHT);
+
+      const lamp = surface.createRadialGradient(155, 115, 20, 154, 132, 395);
+      lamp.addColorStop(0, "#cbd79726");
+      lamp.addColorStop(0.48, "#73c0b00e");
+      lamp.addColorStop(1, "#071a2070");
+      surface.fillStyle = lamp;
+      surface.fillRect(0, 0, WIDTH, HEIGHT);
+
+      surface.fillStyle = "#0e2d326a";
+      surface.fillRect(0, SERVICE_LINE, WIDTH, HEIGHT - SERVICE_LINE);
+      surface.strokeStyle = "#d4f9df28";
+      surface.lineWidth = 1;
+      surface.setLineDash([3, 5]);
+      surface.beginPath();
+      surface.moveTo(10, SERVICE_LINE + 0.5);
+      surface.lineTo(WIDTH - 10, SERVICE_LINE + 0.5);
+      surface.stroke();
+      surface.setLineDash([]);
+
+      // Small rail marks make rebounds easier to line up.
+      for (let y = 28; y <= HEIGHT - 26; y += 26) {
+        const bright = y % 52 === 28;
+        surface.fillStyle = bright ? "#d7eacc4f" : "#a1c8b535";
+        surface.fillRect(3, y, bright ? 6 : 3, 1);
+        surface.fillRect(WIDTH - (bright ? 9 : 6), y, bright ? 6 : 3, 1);
+      }
+      for (let x = 30; x < WIDTH - 25; x += 26) {
+        surface.fillStyle = "#dbe8cb41";
+        surface.fillRect(x, 3, 1, x === 160 ? 6 : 3);
+        surface.fillRect(x, HEIGHT - 6, 1, 3);
+      }
+
+      for (const [index, zone] of table.zones.entries()) {
+        const ink = INLAYS[index];
+        surface.fillStyle = "#0f2d37a0";
+        surface.fillRect(zone.x + 1, zone.y + 2, zone.w, zone.h);
+        surface.fillStyle = ink.fill;
+        surface.fillRect(zone.x, zone.y, zone.w, zone.h);
+        surface.strokeStyle = ink.line + "b0";
+        surface.strokeRect(zone.x + 0.5, zone.y + 0.5, zone.w - 1, zone.h - 1);
+        surface.strokeStyle = ink.line + "56";
+        surface.strokeRect(zone.x + 4.5, zone.y + 4.5, zone.w - 9, zone.h - 9);
+        surface.fillStyle = ink.line + "bb";
+        for (const [a, b] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+          const x = zone.x + (a ? zone.w - 4 : 0);
+          const y = zone.y + (b ? zone.h - 4 : 0);
+          surface.fillRect(x, y, 4, 4);
+        }
+        const digitSize = Math.min(44, Math.min(zone.w, zone.h) * 0.72);
+        surface.font = `800 ${digitSize}px system-ui, sans-serif`;
+        surface.textAlign = "center";
+        surface.textBaseline = "middle";
+        surface.fillStyle = "#08171775";
+        surface.fillText(zone.points, zone.x + zone.w / 2, zone.y + zone.h / 2 + 4);
+        surface.fillStyle = ink.digits;
+        surface.fillText(zone.points, zone.x + zone.w / 2, zone.y + zone.h / 2 + 2);
+      }
+
+      surface.fillStyle = texturedFelt(surface);
+      surface.fillRect(0, 0, WIDTH, HEIGHT);
+      for (const prop of table.props) paintProp(prop);
+
+      const topRail = surface.createLinearGradient(0, 0, 0, 12);
+      topRail.addColorStop(0, "#000f16a0");
+      topRail.addColorStop(1, "#000f1600");
+      surface.fillStyle = topRail;
+      surface.fillRect(0, 0, WIDTH, 12);
+      surface.strokeStyle = "#d4ecb940";
+      surface.strokeRect(0.5, 0.5, WIDTH - 1, HEIGHT - 1);
+    }
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      const density = Math.min(devicePixelRatio || 1, 2.5);
+      const width = Math.max(WIDTH, Math.round(rect.width * density));
+      const height = Math.max(HEIGHT, Math.round(rect.height * density));
+      if (width === background.width && height === background.height) return;
+      background.width = canvas.width = width;
+      background.height = canvas.height = height;
+      paintedTable = null;
+    }
+
+    function paintBall(ball, isWaiting = false, scoring = false) {
+      const { x, y, side } = ball;
+      const team = TEAMS[side];
+      ctx.save();
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetY = 3;
+      ctx.shadowColor = "#071913c9";
+      const glaze = ctx.createRadialGradient(x - 4.6, y - 5.2, 0.6, x + 3, y + 4, 17.6);
+      glaze.addColorStop(0, team.glint);
+      glaze.addColorStop(0.28, team.light);
+      glaze.addColorStop(0.65, team.middle);
+      glaze.addColorStop(1, team.dark);
+      arc(ctx, x, y, RADIUS);
+      ctx.fillStyle = glaze;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = side === 0 ? "#fff1bf9c" : "#b5f5ffa1";
+      ctx.lineWidth = 0.85;
+      ctx.stroke();
+
+      arc(ctx, x + 0.3, y + 0.4, 6.35);
+      ctx.fillStyle = "#fffbea53";
+      ctx.fill();
+      ctx.strokeStyle = team.ink + "95";
+      ctx.stroke();
+      ctx.strokeStyle = team.ink;
+      ctx.lineWidth = 1.25;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      if (side === 0) {
+        ctx.moveTo(x - 2.65, y + 0.2);
+        ctx.lineTo(x + 2.65, y + 0.2);
+      } else {
+        ctx.moveTo(x - 2.35, y + 2.35);
+        ctx.lineTo(x + 2.35, y - 2.35);
+        ctx.moveTo(x - 2.35, y - 2.35);
+        ctx.lineTo(x + 2.35, y + 2.35);
+      }
+      ctx.stroke();
+      ctx.restore();
+      if (scoring) {
+        ctx.strokeStyle = team.flare;
+        ctx.lineWidth = 1;
+        arc(ctx, x, y, RADIUS + 2.5);
+        ctx.stroke();
+      }
+      if (!isWaiting) return;
+
+      ctx.strokeStyle = "#f9f8e4";
+      ctx.lineWidth = 1.2;
+      arc(ctx, x, y, 17);
+      ctx.stroke();
+    }
+
+    function paintLauncher(match, aim, time) {
+      const { x, y } = SPAWN;
+      const aiming = aim?.strength > 0.02;
+      const side = match.side;
+      ctx.save();
+      ctx.strokeStyle = "#b4d4c56b";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 4]);
+      arc(ctx, x, y, 23);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (match.phase === "ready") {
+        if (!aiming && !reduceMotion) {
+          const wave = (Math.sin(time * 0.004) + 1) / 2;
+          ctx.strokeStyle = `rgba(238, 245, 206, ${0.42 - wave * 0.24})`;
+          arc(ctx, x, y, 19 + wave * 9);
+          ctx.stroke();
+        }
+        if (aiming) {
+          const length = 20 + 58 * aim.strength;
+          const nx = Math.cos(aim.angle);
+          const ny = Math.sin(aim.angle);
+          for (let dist = 22; dist <= length; dist += 7) {
+            ctx.globalAlpha = 1 - 0.62 * ((dist - 22) / length);
+            ctx.fillStyle = TEAMS[side].glint;
+            arc(ctx, x + nx * dist, y + ny * dist, dist < 30 ? 2.2 : 1.6);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = TEAMS[side].flare;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(x, y, 20, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * aim.strength);
+          ctx.stroke();
+        }
+        paintBall({ x, y, side }, true);
+      }
+      ctx.restore();
+    }
+
+    function paintHighlights(match, time) {
+      if (!match.highlight?.length) return;
+      const age = Math.max(0, time - match.changedAt);
+      if (age > 2000 && match.phase !== "ended") return;
+      const brightness = match.phase === "ended" ? 0.78 : Math.max(0, 1 - age / 2000);
+      ctx.save();
+      for (const edit of match.highlight) {
+        const z = match.table.zones[edit.index];
+        const gainedBy = edit.change[0] > 0 ? 0 : edit.change[1] > 0 ? 1 : -1;
+        const color = gainedBy < 0 ? "#ecf0cf" : TEAMS[gainedBy].flare;
+        ctx.globalAlpha = 0.26 * brightness;
+        ctx.fillStyle = color;
+        ctx.fillRect(z.x, z.y, z.w, z.h);
+        ctx.globalAlpha = brightness;
+        ctx.strokeStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 9;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(z.x + 1, z.y + 1, z.w - 2, z.h - 2);
+      }
+      ctx.restore();
+    }
+
+    function impact(x, y, force, type) {
+      if (reduceMotion) return;
+      if (motes.length >= 14) motes.shift();
+      motes.push({ x, y, time: performance.now(), size: Math.min(16, 4 + force / 20), type });
+    }
+
+    function render(match, aim, time) {
+      if (paintedTable !== match.table) {
+        paintFelt(match.table);
+        paintedTable = match.table;
+      }
+      ctx.setTransform(canvas.width / WIDTH, 0, 0, canvas.height / HEIGHT, 0, 0);
+      ctx.drawImage(background, 0, 0, WIDTH, HEIGHT);
+      paintHighlights(match, time);
+      paintLauncher(match, aim, time);
+      for (const ball of match.balls) {
+        const scoring = match.phase !== "rolling" && Physics.zoneAt(ball.x, ball.y, match.table) >= 0;
+        paintBall(ball, false, scoring);
+      }
+
+      while (motes.length && time - motes[0].time > 270) motes.shift();
+      ctx.save();
+      for (const mote of motes) {
+        const life = Math.max(0, (time - mote.time) / 270);
+        ctx.globalAlpha = (1 - life) * 0.52;
+        ctx.strokeStyle = mote.type === "spring" ? "#d7ffe3" : mote.type === "ball" ? "#fff6c5" : "#daeee5";
+        ctx.lineWidth = 1.3;
+        arc(ctx, mote.x, mote.y, 1 + life * mote.size);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    resize();
+    new ResizeObserver(resize).observe(canvas);
+    return { render, impact, clear: () => { motes.length = 0; } };
+  }
+
+  return { create };
+})();
+</script>
+  <script>
+"use strict";
+
+const COPY = {
+  title: "三球抢地",
+  rules: "规则",
+  soundOn: "音效开",
+  soundOff: "音效关",
+  modeHeading: "对战模式",
+  cpuMode: "挑战电脑",
+  localMode: "同屏双人",
+  restart: "重开本局",
+  enterCode: "输入残局码",
+  historyHeading: "回合记录",
+  historyEmpty: "第一球停稳后开始记分。",
+  propPillar: "挡柱",
+  propPillarHint: "挡开来球",
+  propSpring: "弹力垫",
+  propSpringHint: "碰上后弹得更远",
+  ruleAim: "按住白圈内的球，往想打方向的反面拖动，松手出球。拖得越远，球速越快。",
+  ruleLayout: "每局随机摆放三个得分区，位置和大小都会变。",
+  ruleScore: "球停稳后，球边碰到得分区就得分，压线也有效。一个区可以停多颗球。",
+  ruleScoreClassic: "这份旧版残局按球心计分。一个区能停多颗球，撞出区就会掉分。",
+  ruleProps: "棕色挡柱会挡开来球，绿色弹力垫的反弹更强。可以借它们改线路。",
+  ruleService: "停在底部发球区的已发球会被收走，方便下一杆出球。",
+  ruleEnd: "双方各出三球。第 5 杆和第 6 杆停稳时各记一次盘面分，两次相加定胜负。同分算平局，再战交换先手。",
+  ruleEndLegacy: "这份残局以第 6 杆停稳时的盘面分结算。",
+  ruleKeyboard: "键盘玩法。聚焦球桌，左右调方向，上下调力度，空格出球。按 Esc 取消瞄准。",
+  understood: "知道了",
+  human: "你",
+  computer: "电脑",
+  playerOrange: "橙方",
+  playerBlue: "蓝方",
+  opponent: "对手",
+  turn: name => `轮到${name}`,
+  round: (a, b) => `第 ${a} / ${b} 杆`,
+  lastRound: "最后一杆",
+  total: "总分",
+  checkpointSaved: points => `第 5 杆已记 ${points}。这杆的盘面分会再加进去。`,
+  finalBreakdown: (before, after) => `第 5 杆 ${before} + 第 6 杆 ${after}`,
+  finishedRound: "已结算",
+  challengeHeading: "一杆残局",
+  challengeReady: "仅剩一杆",
+  ready: "按住白圈里的球，反向拖动后松手。",
+  aiming: "松手出球",
+  shortPull: "继续向后拖动",
+  keyAim: "方向键调整，空格出球。",
+  strength: value => `力度 ${value}%`,
+  cpuTurn: "电脑瞄准中",
+  cpuAim: "球停稳后轮到你。",
+  finalCpuAim: "这杆停稳后结算。",
+  rolling: "滚动中",
+  settle: "球停稳后更新比分。",
+  left: count => `剩余 ${count} 球`,
+  tie: "平局",
+  won: "你赢了",
+  lost: "电脑获胜",
+  winner: name => `${name}获胜`,
+  gameEnded: "本局结束",
+  challengeEnded: "残局结束",
+  resultReview: "查看球桌",
+  resultScore: "比分",
+  resultLastShot: note => `末杆 · ${note}`,
+  again: "再战",
+  againChallenge: "再打这杆",
+  tryMyGame: "我也试试",
+  knockedOut: points => `把对手挤出 ${points} 分区`,
+  captured: points => `占进 ${points} 分区`,
+  dropped: points => `${points} 分区掉分`,
+  held: "比分未变",
+  scoreLine: (a, b) => `${a} ∶ ${b}`,
+  challengeFriend: "把最后一球发给好友",
+  codeInstruction: "粘贴好友发来的链接或残局码。",
+  playChallenge: "打开残局",
+  invalidChallenge: "这份残局无法恢复。检查链接或残局码，也可以直接开一局。",
+  sharePitch: margin => `这桌还剩最后一球。原局${margin}，你能打得更好吗？`,
+  challengeBenchmark: (a, b, margin, combined) => `${combined ? "原局总分" : "原杆比分"} ${a} 比 ${b}（你方在前，${margin}）。你只有一杆。`,
+  compare: (before, after) => `原局${before} · 复打${after}`,
+  improved: "这一杆更好",
+  matched: "追平原杆",
+  under: "未超过原记录",
+  originalShot: "原局分差",
+  yourShot: "复打分差",
+  margin: value => value > 0 ? `净胜 ${value} 分` : value < 0 ? `落后 ${-value} 分` : "平局",
+  linkLabel: "挑战链接",
+  codeLabel: "残局码",
+  copyLink: "复制链接",
+  copyCode: "复制残局码",
+  copied: label => `${label}已复制。`,
+  selectCopy: label => `已选中${label}，可手动复制。`,
+};
+
+const FREQUENCIES = { launch: 220, wall: 390, ball: 810, pillar: 310, spring: 1020, finish: 610 };
+const get = id => document.getElementById(id);
+const canvas = get("court");
+const renderer = Court.create(canvas);
+const dialogs = {
+  result: get("result-dialog"),
+  rules: get("rules-dialog"),
+  code: get("code-dialog"),
+  share: get("share-dialog"),
+};
+const scoreElements = [0, 1].map(side => ({
+  card: get(`side-${side}`), name: get(`name-${side}`), number: get(`score-${side}`), pips: get(`pips-${side}`),
+}));
+const modeButtons = [...document.querySelectorAll("[data-mode]")];
+
+let match;
+let aim = null;
+let drag = null;
+let computerTimer;
+let lastFrame = 0;
+let audioContext;
+let lastImpact = 0;
+let soundOn = true;
+try { soundOn = localStorage.getItem("three-ball-sound") !== "off"; } catch {}
+
+for (const node of document.querySelectorAll("[data-copy]")) node.textContent = COPY[node.dataset.copy];
+for (const { pips } of scoreElements) {
+  pips.setAttribute("role", "img");
+  for (let i = 0; i < 3; i += 1) {
+    const dot = document.createElement("span");
+    dot.className = "pip";
+    dot.setAttribute("aria-hidden", "true");
+    pips.append(dot);
+  }
+}
+
+function enableAudio() {
+  const Audio = window.AudioContext || window.webkitAudioContext;
+  if (!soundOn || !Audio) return;
+  try {
+    audioContext ||= new Audio();
+    if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+  } catch {}
+}
+
+function tone(type, amount = 1) {
+  if (!soundOn || audioContext?.state !== "running") return;
+  const oscillator = audioContext.createOscillator();
+  const volume = audioContext.createGain();
+  const time = audioContext.currentTime;
+  const duration = type === "finish" ? 0.21 : type === "launch" ? 0.1 : 0.07;
+  const frequency = FREQUENCIES[type];
+  oscillator.type = "triangle";
+  oscillator.frequency.setValueAtTime(frequency, time);
+  oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.56, time + duration);
+  volume.gain.setValueAtTime(Math.max(0.012, amount * 0.11), time);
+  volume.gain.exponentialRampToValueAtTime(0.001, time + duration);
+  oscillator.connect(volume);
+  volume.connect(audioContext.destination);
+  oscillator.start(time);
+  oscillator.stop(time + duration + 0.01);
+  oscillator.onended = () => { oscillator.disconnect(); volume.disconnect(); };
+}
+
+function impact(x, y, speed, type) {
+  renderer.impact(x, y, speed, type);
+  const now = performance.now();
+  if (now - lastImpact < 37) return;
+  lastImpact = now;
+  tone(type, Math.min(1, speed / 430));
+}
+
+function updateSound() {
+  get("sound").setAttribute("aria-pressed", soundOn);
+  get("sound-label").textContent = soundOn ? COPY.soundOn : COPY.soundOff;
+}
+
+function sideName(side) {
+  if (match.mode === "challenge") return side === match.first ? COPY.human : COPY.opponent;
+  if (match.mode === "cpu") return side === 0 ? COPY.human : COPY.computer;
+  return side === 0 ? COPY.playerOrange : COPY.playerBlue;
+}
+
+function isComputer() {
+  return match.mode === "cpu" && match.side === 1;
+}
+
+function canAim() {
+  return match.phase === "ready" && !isComputer() && !Object.values(dialogs).some(dialog => dialog.open);
+}
+
+function updateAim() {
+  const bar = get("power");
+  bar.hidden = !aim;
+  if (!aim) return;
+  const value = Math.round(aim.strength * 100);
+  get("power-label").textContent = COPY.strength(value);
+  get("power-fill").style.width = `${value}%`;
+  get("power-fill").classList.toggle("blue", match.side === 1);
+  get("turn-hint").textContent = aim.keyboard ? COPY.keyAim : aim.canShoot ? COPY.aiming : COPY.shortPull;
+}
+
+function updateTurn() {
+  const ended = match.phase === "ended";
+  const title = get("turn-title");
+  const hint = get("turn-hint");
+  const isRolling = match.phase === "rolling";
+  get("turn-control").hidden = ended;
+  get("finish-control").hidden = !ended;
+  canvas.classList.toggle("can-shoot", canAim());
+  canvas.classList.toggle("aiming", Boolean(drag));
+  if (ended) return;
+
+  title.classList.toggle("orange-turn", match.side === 0);
+  title.classList.toggle("blue-turn", match.side === 1);
+  title.textContent = isRolling ? COPY.rolling : isComputer() ? COPY.cpuTurn : COPY.turn(sideName(match.side));
+  const computerHint = match.plays.length === 5 ? COPY.finalCpuAim : COPY.cpuAim;
+  hint.textContent = isRolling ? COPY.settle : isComputer() ? computerHint : COPY.ready;
+  get("checkpoint-note").hidden = !match.checkpoint;
+  if (match.checkpoint) get("checkpoint-note").textContent = COPY.checkpointSaved(COPY.scoreLine(...match.checkpoint));
+  updateAim();
+}
+
+function shotNote(changes, side) {
+  const knock = changes.filter(item => item.change[1 - side] < 0);
+  if (knock.length) return COPY.knockedOut(Math.max(...knock.map(item => item.points)));
+  const gain = changes.filter(item => item.change[side] > 0);
+  if (gain.length) return COPY.captured(Math.max(...gain.map(item => item.points)));
+  const loss = changes.filter(item => item.change[side] < 0);
+  if (loss.length) return COPY.dropped(Math.max(...loss.map(item => item.points)));
+  const opponentGain = changes.filter(item => item.change[1 - side] > 0);
+  if (opponentGain.length) return `${sideName(1 - side)}${COPY.captured(Math.max(...opponentGain.map(item => item.points)))}`;
+  return COPY.held;
+}
+
+function updateHistory() {
+  const fragment = document.createDocumentFragment();
+  for (const play of match.plays.slice().reverse()) {
+    const row = document.createElement("li");
+    const number = document.createElement("span");
+    const summary = document.createElement("div");
+    const name = document.createElement("strong");
+    const note = document.createElement("span");
+    const score = document.createElement("strong");
+    number.className = "history-no";
+    number.textContent = String(play.number).padStart(2, "0");
+    summary.className = "history-note";
+    name.classList.toggle("blue", play.side === 1);
+    name.textContent = sideName(play.side);
+    note.textContent = shotNote(play.changes, play.side);
+    summary.append(name, note);
+    score.className = "history-score";
+    score.textContent = COPY.scoreLine(...play.score);
+    row.append(number, summary, score);
+    fragment.append(row);
+  }
+  get("history-empty").hidden = match.plays.length > 0;
+  get("history").replaceChildren(fragment);
+}
+
+function difference(scores, side) {
+  return scores[side] - scores[1 - side];
+}
+
+function resultScores() {
+  if (!match.checkpoint) return match.scores;
+  return match.scores.map((points, side) => points + match.checkpoint[side]);
+}
+
+function updateResult(total) {
+  const ended = match.phase === "ended";
+  const challenge = match.challenge;
+  get("challenge-panel").hidden = !challenge;
+  get("challenge-results").hidden = !challenge || !ended;
+  get("share").hidden = Boolean(challenge);
+  get("result-share").hidden = Boolean(challenge);
+  get("new-game").hidden = !challenge;
+  get("result-new-game").hidden = !challenge;
+  const againLabel = challenge ? COPY.againChallenge : COPY.again;
+  get("again").textContent = againLabel;
+  get("result-again").textContent = againLabel;
+  if (challenge) {
+    const { side, original } = challenge;
+    get("challenge-benchmark").textContent = COPY.challengeBenchmark(
+      original[side], original[1 - side], COPY.margin(difference(original, side)), challenge.usesFinalTwoScores);
+  }
+  if (!ended) return;
+
+  let title;
+  let detail;
+  if (challenge) {
+    const before = difference(challenge.original, challenge.side);
+    const after = difference(total, challenge.side);
+    get("compare-original").textContent = COPY.margin(before);
+    get("compare-new").textContent = COPY.margin(after);
+    title = after > before ? COPY.improved : after === before ? COPY.matched : COPY.under;
+    detail = COPY.compare(COPY.margin(before), COPY.margin(after));
+  } else {
+    const orangeLead = difference(total, 0);
+    if (orangeLead === 0) title = COPY.tie;
+    else if (match.mode === "cpu") title = orangeLead > 0 ? COPY.won : COPY.lost;
+    else title = COPY.winner(sideName(orangeLead > 0 ? 0 : 1));
+    const last = match.plays[match.plays.length - 1];
+    detail = COPY.resultLastShot(shotNote(last.changes, last.side));
+  }
+  const breakdown = match.checkpoint
+    ? COPY.finalBreakdown(COPY.scoreLine(...match.checkpoint), COPY.scoreLine(...match.scores))
+    : "";
+  for (const id of ["finish-breakdown", "result-breakdown"]) {
+    const node = get(id);
+    node.hidden = !breakdown;
+    node.textContent = breakdown;
+  }
+  get("finish-title").textContent = title;
+  get("finish-detail").textContent = challenge ? detail : `${COPY.scoreLine(...total)} · ${detail}`;
+  get("result-kind").textContent = challenge ? COPY.challengeEnded : COPY.gameEnded;
+  get("result-title").textContent = title;
+  get("result-note").textContent = detail;
+  get("result-score-label").textContent = match.checkpoint ? COPY.total : COPY.resultScore;
+  for (const [side, score] of total.entries()) {
+    get(`result-name-${side}`).textContent = sideName(side);
+    get(`result-score-${side}`).textContent = score;
+  }
+}
+
+function updateUI() {
+  const ended = match.phase === "ended";
+  const displayedScore = ended ? resultScores() : match.scores;
+  for (const [side, ui] of scoreElements.entries()) {
+    ui.card.classList.toggle("active", !ended && match.side === side);
+    ui.name.textContent = sideName(side);
+    ui.number.textContent = displayedScore[side];
+    ui.pips.setAttribute("aria-label", COPY.left(match.left[side]));
+    for (const [index, dot] of [...ui.pips.children].entries()) dot.classList.toggle("used", index >= match.left[side]);
+  }
+
+  const round = match.challenge ? 6 : Math.min(match.plays.length + 1, 6);
+  get("round-title").textContent = match.challenge ? COPY.challengeHeading : COPY.round(round, 6);
+  const detail = match.challenge ? COPY.challengeReady : round === 6 ? COPY.lastRound : "";
+  get("round-detail").textContent = ended ? match.checkpoint ? COPY.total : COPY.finishedRound : detail;
+  for (const button of modeButtons) button.setAttribute("aria-pressed", button.dataset.mode === match.mode);
+  get("prop-guide").hidden = match.table.props.length === 0;
+  get("rule-layout").hidden = !match.table.edgeScoring;
+  get("rule-props").hidden = match.table.props.length === 0;
+  get("rule-score").textContent = match.table.edgeScoring ? COPY.ruleScore : COPY.ruleScoreClassic;
+  get("rule-end").textContent = match.usesFinalTwoScores ? COPY.ruleEnd : COPY.ruleEndLegacy;
+  updateTurn();
+  updateHistory();
+  updateResult(displayedScore);
+}
+
+function clearDrag() {
+  const id = drag?.id;
+  drag = null;
+  aim = null;
+  if (id !== undefined && canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
+}
+
+function notice(message = "") {
+  const node = get("notice");
+  node.textContent = message;
+  node.hidden = !message;
+}
+
+function replaceRoute(code) {
+  const url = new URL(location.href);
+  url.hash = code ? `shot=${code}` : "";
+  try { history.replaceState(null, "", url); } catch {}
+}
+
+function start(mode, first = 0, challenge = null) {
+  clearTimeout(computerTimer);
+  clearDrag();
+  if (dialogs.share.open) dialogs.share.close();
+  if (dialogs.result.open) dialogs.result.close();
+  notice();
+  renderer.clear();
+  const balls = challenge ? challenge.balls.map(Physics.restingBall) : [];
+  const table = challenge?.table ?? Physics.newTable();
+  const usesFinalTwoScores = challenge?.usesFinalTwoScores ?? true;
+  const scores = Physics.score(balls, table);
+  const left = challenge ? [0, 0] : [3, 3];
+  if (challenge) left[first] = 1;
+  match = {
+    mode, first, challenge, side: first, left, balls, table, scores, usesFinalTwoScores,
+    checkpoint: challenge && usesFinalTwoScores ? scores : null, phase: "ready", plays: [], resultShown: false,
+    before: [], snapshot: null, highlight: [], changedAt: 0, spent: 0, ticks: 0, still: 0,
+  };
+  if (!challenge && location.hash.startsWith("#shot=")) replaceRoute("");
+  updateUI();
+  scheduleComputer();
+}
+
+function scheduleComputer() {
+  if (!isComputer() || match.phase !== "ready") return;
+  const planned = match;
+  computerTimer = setTimeout(() => {
+    if (match !== planned || match.phase !== "ready" || !isComputer()) return;
+    const shot = Physics.chooseShot(match.balls, match.side, match.plays.length, match.table);
+    launch(shot);
+  }, 650);
+}
+
+function launch(shot) {
+  if (match.phase !== "ready" || match.left[match.side] <= 0) return;
+  clearDrag();
+  match.before = match.balls.map(Physics.restingBall);
+  if (!match.challenge && match.plays.length === 5) match.snapshot = { side: match.side, balls: match.before };
+  match.balls.push(Physics.newBall(match.side, shot));
+  match.left[match.side] -= 1;
+  match.phase = "rolling";
+  match.spent = 0;
+  match.still = 0;
+  match.ticks = 0;
+  tone("launch", shot.strength * 0.63);
+  updateUI();
+}
+
+function settle() {
+  match.balls = match.balls.filter(ball => ball.y < Physics.SERVICE_LINE).map(Physics.restingBall);
+  match.scores = Physics.score(match.balls, match.table);
+  const changes = Physics.zoneChanges(match.before, match.balls, match.table);
+  match.plays.push({ number: match.challenge ? 6 : match.plays.length + 1,
+    side: match.side, changes, score: match.scores });
+  if (match.usesFinalTwoScores && match.plays.length === 5) match.checkpoint = match.scores;
+  match.highlight = changes;
+  match.changedAt = performance.now();
+  if (match.challenge || match.plays.length === 6) {
+    match.phase = "ended";
+  } else {
+    match.side = 1 - match.side;
+    match.phase = "ready";
+  }
+  updateUI();
+  if (match.phase === "ended") showResultIfReady();
+  else scheduleComputer();
+}
+
+function animate(time) {
+  const dt = lastFrame ? Math.min((time - lastFrame) / 1000, 0.06) : 0;
+  lastFrame = time;
+  if (match.phase === "rolling") {
+    match.spent += dt;
+    while (match.phase === "rolling" && match.spent >= Physics.STEP) {
+      match.spent -= Physics.STEP;
+      match.ticks += 1;
+      match.still = Physics.step(match.balls, impact, match.table) ? match.still + 1 : 0;
+      if (match.still >= Physics.STOP_STEPS || match.ticks >= Physics.MAX_STEPS) settle();
+    }
+  }
+  renderer.render(match, aim, time);
+  requestAnimationFrame(animate);
+}
+
+function toTable(event) {
+  const bounds = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - bounds.left) * Physics.WIDTH / bounds.width,
+    y: (event.clientY - bounds.top) * Physics.HEIGHT / bounds.height,
+  };
+}
+
+canvas.addEventListener("pointerdown", event => {
+  if (!canAim() || drag || !event.isPrimary || event.button !== 0) return;
+  const point = toTable(event);
+  if (Math.hypot(point.x - Physics.SPAWN.x, point.y - Physics.SPAWN.y) > 30) return;
+  event.preventDefault();
+  enableAudio();
+  drag = { id: event.pointerId, ...point };
+  canvas.setPointerCapture(event.pointerId);
+  aim = Physics.aimedShot(0, 0);
+  updateTurn();
+});
+
+function aimFromPointer(event) {
+  const point = toTable(event);
+  return Physics.aimedShot(point.x - drag.x, point.y - drag.y);
+}
+
+canvas.addEventListener("pointermove", event => {
+  if (drag?.id !== event.pointerId) return;
+  aim = aimFromPointer(event);
+  updateAim();
+});
+
+canvas.addEventListener("pointerup", event => {
+  if (drag?.id !== event.pointerId) return;
+  const shot = aimFromPointer(event);
+  clearDrag();
+  if (shot.canShoot && canAim()) launch(shot);
+  else updateTurn();
+});
+
+function cancelAim() {
+  if (!drag && !aim) return;
+  clearDrag();
+  updateTurn();
+}
+
+for (const type of ["pointercancel", "lostpointercapture"]) {
+  canvas.addEventListener(type, event => { if (drag?.id === event.pointerId) cancelAim(); });
+}
+canvas.addEventListener("blur", () => { if (aim?.keyboard) cancelAim(); });
+window.addEventListener("blur", cancelAim);
+document.addEventListener("visibilitychange", () => { if (document.hidden) cancelAim(); });
+
+canvas.addEventListener("keydown", event => {
+  if (!canAim() || drag || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "Escape"].includes(event.key)) return;
+  event.preventDefault();
+  if (event.key === "Escape") { cancelAim(); return; }
+  aim ||= { angle: -Math.PI / 2, strength: 0.62, keyboard: true, canShoot: true };
+  if (event.key === "ArrowLeft") aim.angle -= 0.045;
+  if (event.key === "ArrowRight") aim.angle += 0.045;
+  if (event.key === "ArrowUp") aim.strength = Math.min(1, aim.strength + 0.035);
+  if (event.key === "ArrowDown") aim.strength = Math.max(0.10, aim.strength - 0.035);
+  if (event.key === " " && !event.repeat) { enableAudio(); launch(aim); return; }
+  updateAim();
+});
+
+function parseInput(input) {
+  const code = input.trim();
+  if (/^3B[123]-/.test(code)) return Challenge.decode(code);
+  const url = new URL(code);
+  if (!url.hash.startsWith("#shot=")) throw new Error("No last-shot challenge");
+  return Challenge.decode(url.hash.slice(6));
+}
+
+function openChallenge(challenge) {
+  start("challenge", challenge.side, challenge);
+  replaceRoute(challenge.code);
+}
+
+function readRoute() {
+  if (!location.hash.startsWith("#shot=")) {
+    start("cpu");
+    return;
+  }
+  try {
+    openChallenge(Challenge.decode(location.hash.slice(6)));
+  } catch {
+    start("cpu");
+    notice(COPY.invalidChallenge);
+  }
+}
+
+function show(dialog) {
+  cancelAim();
+  dialog.showModal();
+  updateTurn();
+}
+
+function showResultIfReady() {
+  if (match.phase !== "ended" || match.resultShown || Object.values(dialogs).some(dialog => dialog.open)) return;
+  match.resultShown = true;
+  tone("finish", 0.55);
+  show(dialogs.result);
+}
+
+function shareDetails() {
+  const { side, balls } = match.snapshot;
+  const code = Challenge.encode(side, balls, resultScores(), match.table, match.usesFinalTwoScores);
+  if (location.protocol === "file:") return { code, link: "" };
+  const url = new URL(location.href);
+  url.search = "";
+  url.hash = `shot=${code}`;
+  return { code, link: url.href };
+}
+
+async function copyShare(useLink) {
+  const details = shareDetails();
+  const text = useLink ? details.link : details.code;
+  const label = useLink ? COPY.linkLabel : COPY.codeLabel;
+  const area = get("share-value");
+  get("share-value-label").textContent = label;
+  area.value = text;
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(text);
+    copied = true;
+  } catch {
+    area.focus();
+    area.select();
+    try { copied = document.execCommand("copy"); } catch {}
+  }
+  get("copy-feedback").textContent = copied ? COPY.copied(label) : COPY.selectCopy(label);
+}
+
+get("sound").addEventListener("click", () => {
+  soundOn = !soundOn;
+  try { localStorage.setItem("three-ball-sound", soundOn ? "on" : "off"); } catch {}
+  updateSound();
+  enableAudio();
+});
+get("rules").addEventListener("click", () => show(dialogs.rules));
+get("enter-code").addEventListener("click", () => {
+  get("code-error").hidden = true;
+  show(dialogs.code);
+  get("code-input").focus();
+});
+get("code-form").addEventListener("submit", event => {
+  event.preventDefault();
+  let challenge;
+  try {
+    challenge = parseInput(get("code-input").value);
+  } catch {
+    get("code-error").textContent = COPY.invalidChallenge;
+    get("code-error").hidden = false;
+    return;
+  }
+  enableAudio();
+  dialogs.code.close();
+  openChallenge(challenge);
+  canvas.scrollIntoView({ behavior: "instant", block: "nearest" });
+});
+
+for (const button of modeButtons) button.addEventListener("click", () => {
+  enableAudio();
+  if (match.mode !== button.dataset.mode) start(button.dataset.mode);
+});
+get("restart").addEventListener("click", () => {
+  enableAudio();
+  start(match.mode, match.first, match.challenge);
+});
+function playAgain() {
+  enableAudio();
+  start(match.mode, match.challenge ? match.first : 1 - match.first, match.challenge);
+}
+
+function playOwnGame() {
+  enableAudio();
+  start("cpu");
+  canvas.scrollIntoView({ block: "nearest" });
+  canvas.focus({ preventScroll: true });
+}
+
+function showShare() {
+  if (!match.snapshot) return;
+  const { code, link } = shareDetails();
+  get("share-pitch").textContent = COPY.sharePitch(COPY.margin(difference(resultScores(), match.snapshot.side)));
+  get("share-value-label").textContent = link ? COPY.linkLabel : COPY.codeLabel;
+  get("share-value").value = link || code;
+  get("copy-link").hidden = !link;
+  get("copy-feedback").textContent = "";
+  show(dialogs.share);
+}
+
+for (const id of ["again", "result-again"]) get(id).addEventListener("click", playAgain);
+for (const id of ["new-game", "result-new-game"]) get(id).addEventListener("click", playOwnGame);
+for (const id of ["share", "result-share"]) get(id).addEventListener("click", showShare);
+get("copy-link").addEventListener("click", () => copyShare(true));
+get("copy-code").addEventListener("click", () => copyShare(false));
+
+for (const dialog of Object.values(dialogs)) {
+  dialog.querySelector(".close").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("close", () => {
+    updateTurn();
+    showResultIfReady();
+  });
+}
+window.addEventListener("hashchange", readRoute);
+
+updateSound();
+readRoute();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
